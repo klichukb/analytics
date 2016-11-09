@@ -21,6 +21,8 @@ var (
 const (
 	wsRoot    = "/ws"
 	readLimit = 4096
+	// time to wait for write to complete
+	writeWait = 10 * time.Second
 	pongWait  = 120 * time.Second
 	// twice as small as time to wait for a pong back
 	pingPeriod = pongWait / 2
@@ -36,6 +38,27 @@ func updateReadDeadline(ws *websocket.Conn) {
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 }
 
+func startPinging(ws *websocket.Conn, closing, pingFailed chan struct{}) {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ws.SetWriteDeadline(time.Now().Add(writeWait))
+			err := ws.WriteMessage(websocket.PingMessage, []byte{})
+			if err != nil {
+				log.Println("PING ERROR:", err)
+				close(pingFailed)
+				return
+			}
+			log.Println("[Ping]")
+		case <-closing:
+			return
+		}
+	}
+}
+
 // Start infinite listen loop to a websocket connection.
 // Reads incoming messages, does not respond in order to spare traffic.
 // TODO: Sends pings with `pingPeriod` frequency. Handles pongs.
@@ -45,13 +68,29 @@ func handleConnection(ws *websocket.Conn) {
 	ws.SetReadLimit(readLimit)
 	updateReadDeadline(ws)
 
+	// make sure we know how to handle response.
 	ws.SetPongHandler(func(appData string) error {
+		log.Println("[Pong]")
 		// update read deadline after pong
 		updateReadDeadline(ws)
 		return nil
 	})
 
+	closing := make(chan struct{})
+	pingFailed := make(chan struct{})
+
+	go startPinging(ws, closing, pingFailed)
+
+loop:
 	for {
+		// check the sentinel channel.
+		// if ping ever failed, stop the loop
+		select {
+		case <-pingFailed:
+			break loop
+		default:
+		}
+
 		msgType, msg, err := ws.ReadMessage()
 		if err != nil {
 			log.Printf("ERROR: ", err)
@@ -60,6 +99,7 @@ func handleConnection(ws *websocket.Conn) {
 			if websocket.IsUnexpectedCloseError(err, fatalCodes...) {
 				break
 			}
+			continue
 		}
 		var result interface{}
 		if msgType == websocket.TextMessage {
