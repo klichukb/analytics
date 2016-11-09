@@ -31,10 +31,14 @@ var wsUpgrader = websocket.Upgrader{
 	WriteBufferSize: 4096,
 }
 
+// Sets read deadline to `now` + `pongWait`.
 func updateReadDeadline(ws *websocket.Conn) {
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 }
 
+// Start infinite listen loop to a websocket connection.
+// Reads incoming messages, does not respond in order to spare traffic.
+// TODO: Sends pings with `pingPeriod` frequency. Handles pongs.
 func handleConnection(ws *websocket.Conn) {
 	defer ws.Close()
 
@@ -61,7 +65,12 @@ func handleConnection(ws *websocket.Conn) {
 	}
 }
 
-func serveWebsocket(w http.ResponseWriter, r *http.Request) {
+// Handle HTTP request: upgrade it to websocket by replying with two headers
+// Upgrade: WebSocket
+// Connection: Upgrade
+// Listens infinitely for new messages.
+// Allowed methods: GET.
+func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Println("New connection")
 	// Upgrader also checks this while attempting to upgrade, but in order
 	// to be independent from it's implementation details, we check explicitly.
@@ -83,9 +92,9 @@ func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
-	http.HandleFunc(wsRoot, serveWebsocket)
-
+	http.HandleFunc(wsRoot, handleRequest)
 	log.Println("Serving...")
+
 	err := http.ListenAndServe(*address, nil)
 	if err != nil {
 		log.Fatal("Server error:", err)
