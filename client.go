@@ -30,8 +30,35 @@ var wsDialer = websocket.Dialer{
 	WriteBufferSize: 4096,
 }
 
+func startClient(wsUrl, name string) {
+	ws, resp, err := wsDialer.Dial(wsUrl, nil)
+	if err != nil {
+		log.Println("ERROR: ", err)
+	}
+	defer ws.Close()
+	log.Println(resp)
+
+	message := []byte("Hello!")
+
+	for {
+		if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
+			log.Println("ERROR: ", err)
+			// in case this error means that servers goes down, - quit the loop.
+			if websocket.IsUnexpectedCloseError(err, fatalCodes...) {
+				break
+			}
+		}
+
+		time.Sleep(5 * time.Second)
+		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+	}
+}
+
 func startSimulation(wsUrl string, workerCount int) {
-	// TODO
+	for n := 1; n < workerCount-1; n++ {
+		go startClient(wsUrl, fmt.Sprintf("Client[%d]", n+1))
+	}
+	startClient(wsUrl, fmt.Sprintf("Client[%d]", workerCount))
 }
 
 func main() {
