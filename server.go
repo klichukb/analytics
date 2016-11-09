@@ -61,7 +61,13 @@ func handleConnection(ws *websocket.Conn) {
 				break
 			}
 		}
-		log.Printf("MSG: [%v], type = %v\n", len(msg), msgType)
+		var result interface{}
+		if msgType == websocket.TextMessage {
+			result = string(msg)
+		} else {
+			result = msg
+		}
+		log.Printf("MSG: [%v][type = %v] %v\n", len(msg), msgType, result)
 	}
 }
 
