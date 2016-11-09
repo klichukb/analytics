@@ -30,12 +30,17 @@ var wsDialer = websocket.Dialer{
 	WriteBufferSize: 4096,
 }
 
-func startClient(wsUrl, name string) {
+func startClient(wsUrl, name string, sync chan int) {
 	ws, _, err := wsDialer.Dial(wsUrl, nil)
 	if err != nil {
 		log.Println("ERROR: ", err)
 	}
-	defer ws.Close()
+
+	// close and signal about exiting
+	defer func() {
+		ws.Close()
+		sync <- 0
+	}()
 
 	message := []byte("Hello!")
 
@@ -49,10 +54,14 @@ func startClient(wsUrl, name string) {
 }
 
 func startSimulation(wsUrl string, workerCount int) {
+	sync := make(chan int)
 	for n := 1; n < workerCount; n++ {
-		go startClient(wsUrl, fmt.Sprintf("Client[%d]", n+1))
+		go startClient(wsUrl, fmt.Sprintf("Client[%d]", n+1), sync)
 	}
-	select {}
+	// wait for all workers
+	for n := 1; n < workerCount; n++ {
+		<-sync
+	}
 }
 
 func main() {
