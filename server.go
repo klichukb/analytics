@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 )
+
+// Flags
+var address = flag.String("address", ":8000", "Websocker server address")
 
 const WS_ROOT = "/ws"
 
@@ -20,10 +24,13 @@ func handleConnection(ws *websocket.Conn) {
 func serveWebsocket(w http.ResponseWriter, r *http.Request) {
 	// TODO
 }
+
 func main() {
+	flag.Parse()
+
 	http.HandleFunc(WS_ROOT, serveWebsocket)
 
-	err := http.ListenAndServe(":8000", nil)
+	err := http.ListenAndServe(*address, nil)
 	if err != nil {
 		log.Fatal("Server error:", err)
 	}
