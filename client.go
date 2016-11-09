@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
-	// "math/rand"
+	"math/rand"
 	"net/url"
 	"time"
 )
@@ -13,7 +13,7 @@ import (
 // Flags
 var (
 	address     = flag.String("address", ":8000", "Websocket server address")
-	workerCount = flag.Int("workers", 1, "Amount of worker clients")
+	workerCount = flag.Int("workers", 100, "Amount of worker clients")
 	fatalCodes  = []int{
 		websocket.CloseGoingAway,
 		websocket.CloseMandatoryExtension,
@@ -31,34 +31,28 @@ var wsDialer = websocket.Dialer{
 }
 
 func startClient(wsUrl, name string) {
-	ws, resp, err := wsDialer.Dial(wsUrl, nil)
+	ws, _, err := wsDialer.Dial(wsUrl, nil)
 	if err != nil {
 		log.Println("ERROR: ", err)
 	}
 	defer ws.Close()
-	log.Println(resp)
 
 	message := []byte("Hello!")
 
 	for {
 		if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
 			log.Println("ERROR: ", err)
-			// in case this error means that servers goes down, - quit the loop.
-			if websocket.IsUnexpectedCloseError(err, fatalCodes...) {
-				break
-			}
+			return
 		}
-
-		time.Sleep(5 * time.Second)
-		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 	}
 }
 
 func startSimulation(wsUrl string, workerCount int) {
-	for n := 1; n < workerCount-1; n++ {
+	for n := 1; n < workerCount; n++ {
 		go startClient(wsUrl, fmt.Sprintf("Client[%d]", n+1))
 	}
-	startClient(wsUrl, fmt.Sprintf("Client[%d]", workerCount))
+	select {}
 }
 
 func main() {
