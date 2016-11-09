@@ -22,7 +22,22 @@ func handleConnection(ws *websocket.Conn) {
 }
 
 func serveWebsocket(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	log.Println("serving connection")
+	// Upgrader also checks this while attempting to upgrade, but in order
+	// to be independent from it's implementation details, we check explicitly.
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", 405)
+		return
+	}
+
+	// Use third param for custom headers: Set-Cookie/Set-Websocket-Protocol
+	ws, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	handleConnection(ws)
 }
 
 func main() {
