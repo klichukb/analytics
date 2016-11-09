@@ -9,7 +9,14 @@ import (
 )
 
 // Flags
-var address = flag.String("address", ":8000", "Websocket server address")
+var (
+	address    = flag.String("address", ":8000", "Websocket server address")
+	fatalCodes = []int{
+		websocket.CloseGoingAway,
+		websocket.CloseMandatoryExtension,
+		websocket.CloseAbnormalClosure,
+	}
+)
 
 const (
 	wsRoot    = "/ws"
@@ -46,8 +53,7 @@ func handleConnection(ws *websocket.Conn) {
 			log.Printf("ERROR: ", err)
 			// in case this error means that client goes down or leaves, we stop
 			// serving it, otherwise just continue it never happened.
-			if websocket.IsUnexpectedCloseError(
-				err, websocket.CloseGoingAway, websocket.CloseMandatoryExtension) {
+			if websocket.IsUnexpectedCloseError(err, fatalCodes...) {
 				break
 			}
 		}
