@@ -45,6 +45,8 @@ func readData(ws *websocket.Conn, closing chan struct{}) {
 	}
 }
 
+// Creates a websocket on `wsUrl` URL.
+// Start single client message loop.
 func startClient(wsUrl, name string, sync chan int) {
 	ws, _, err := wsDialer.Dial(wsUrl, nil)
 	if err != nil {
@@ -60,6 +62,8 @@ func startClient(wsUrl, name string, sync chan int) {
 	}()
 
 	message := []byte("Hello!")
+
+	// launch sentinel reader goroutine
 	go readData(ws, closing)
 
 	for {
@@ -71,6 +75,8 @@ func startClient(wsUrl, name string, sync chan int) {
 	}
 }
 
+// Connects to websocket on `wsUrl` URL.
+// Launches `workerCount` clients that spam server with messages.
 func startSimulation(wsUrl string, workerCount int) {
 	sync := make(chan int)
 	for n := 0; n < workerCount; n++ {
