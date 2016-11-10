@@ -11,14 +11,7 @@ import (
 )
 
 // Flags
-var (
-	address    = flag.String("address", ":8000", "Websocket server address")
-	fatalCodes = []int{
-		websocket.CloseGoingAway,
-		websocket.CloseMandatoryExtension,
-		websocket.CloseAbnormalClosure,
-	}
-)
+var address = flag.String("address", ":8000", "Websocket server address")
 
 const (
 	wsRoot    = "/ws"

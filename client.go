@@ -16,12 +16,7 @@ import (
 var (
 	address     = flag.String("address", ":8000", "Websocket server address")
 	workerCount = flag.Int("workers", 4, "Amount of worker clients")
-	fatalCodes  = []int{
-		websocket.CloseGoingAway,
-		websocket.CloseMandatoryExtension,
-		websocket.CloseAbnormalClosure,
-	}
-	eventTypes = []string{
+	eventTypes  = []string{
 		"session_start",
 		"session_end",
 		"link_clicked",
