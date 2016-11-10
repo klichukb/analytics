@@ -15,7 +15,7 @@ import (
 // Flags
 var (
 	address     = flag.String("address", ":8000", "Websocket server address")
-	workerCount = flag.Int("workers", 4, "Amount of worker clients")
+	workerCount = flag.Int("workers", 10, "Amount of worker clients")
 	eventTypes  = []string{
 		"session_start",
 		"session_end",

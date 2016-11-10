@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"github.com/gorilla/websocket"
 	"log"
@@ -11,7 +12,10 @@ import (
 )
 
 // Flags
-var address = flag.String("address", ":8000", "Websocket server address")
+var (
+	address = flag.String("address", ":8000", "Websocket server address")
+	db      *sql.DB
+)
 
 const (
 	wsRoot    = "/ws"
@@ -111,6 +115,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	flag.Parse()
+
+	db = getDatabase()
+	defer db.Close()
 
 	http.HandleFunc(wsRoot, handleRequest)
 	log.Println("Serving...")
