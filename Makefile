@@ -22,6 +22,10 @@ clients:
 
 export:
 	$(eval dump_path=$(dump_dir)/dump_$(shell date "+%Y_%m_%d").csv)
+
 	@ echo "Dumping '$(dump_path)'...";
-	$(eval query=SELECT * FROM analytics_event INTO OUTFILE '$(dump_path)' FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';)
+	$(eval query=SELECT * FROM analytics_event \
+		WHERE DATE(ts) = CURDATE() \
+		INTO OUTFILE '$(dump_path)' \
+		FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';)
 	@ MYSQL_PWD=$(db_pwd) mysql -u analytics analytics -D analytics -e "$(query)"
