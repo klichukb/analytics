@@ -1,7 +1,7 @@
 package main
 
 type Event struct {
-	EventType string
-	TS        int
-	Params    map[string]interface{}
+	EventType string                 `json:"event_type"`
+	TS        int                    `json:"ts"`
+	Params    map[string]interface{} `json:"params"`
 }
