@@ -1,9 +1,9 @@
 package server
 
 import (
-	"analytics/shared"
 	"database/sql"
 	"github.com/gorilla/websocket"
+	"github.com/klichukb/analytics/shared"
 	"log"
 	"net/http"
 	"net/rpc"

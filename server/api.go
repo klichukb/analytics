@@ -1,8 +1,10 @@
 package server
 
-import "errors"
-import "log"
-import "analytics/shared"
+import (
+	"errors"
+	"github.com/klichukb/analytics/shared"
+	"log"
+)
 
 type Analytics int
 

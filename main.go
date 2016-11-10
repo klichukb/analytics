@@ -1,9 +1,9 @@
 package main
 
 import (
-	"analytics/client"
-	"analytics/server"
 	"flag"
+	"github.com/klichukb/analytics/client"
+	"github.com/klichukb/analytics/server"
 	"log"
 	"net/http"
 	"net/url"

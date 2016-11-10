@@ -1,12 +1,14 @@
 package server
 
-import "time"
-import "fmt"
-import "database/sql"
-import _ "github.com/go-sql-driver/mysql"
-import "encoding/json"
-import "analytics/shared"
-import "os"
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/klichukb/analytics/shared"
+	"os"
+	"time"
+)
 
 var (
 	dbName = os.Getenv("MYSQL_DB")

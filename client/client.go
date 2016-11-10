@@ -1,9 +1,9 @@
 package client
 
 import (
-	"analytics/shared"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/klichukb/analytics/shared"
 	"log"
 	"math/rand"
 	"net/rpc"
