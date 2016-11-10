@@ -21,6 +21,11 @@ var (
 		websocket.CloseMandatoryExtension,
 		websocket.CloseAbnormalClosure,
 	}
+	eventTypes = []string{
+		"session_start",
+		"session_end",
+		"link_clicked",
+	}
 )
 
 const (
@@ -34,12 +39,13 @@ var wsDialer = websocket.Dialer{
 }
 
 func generateEvent() *Event {
+	eventType := eventTypes[rand.Intn(len(eventTypes))]
 	params := map[string]interface{}{
 		"var_a": 123,
 		"var_b": "Foobar",
 		"var_c": []int{42, 42, 84, 1, 0, 1},
 	}
-	return &Event{"PageView", int(time.Now().Unix()), params}
+	return &Event{eventType, int(time.Now().Unix()), params}
 }
 
 // Creates a websocket on `wsUrl` URL.
