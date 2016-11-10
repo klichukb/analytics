@@ -21,8 +21,8 @@ const (
 	wsRoot    = "/ws"
 	readLimit = 4096
 	// time to wait for write to complete
-	writeWait = 10 * time.Second
-	pongWait  = 6 * time.Second
+	writeWait = 15 * time.Second
+	pongWait  = 120 * time.Second
 	// twice as small as time to wait for a pong back
 	pingPeriod = pongWait / 2
 )

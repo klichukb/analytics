@@ -15,7 +15,7 @@ import (
 // Flags
 var (
 	address     = flag.String("address", ":8000", "Websocket server address")
-	workerCount = flag.Int("workers", 10, "Amount of worker clients")
+	workerCount = flag.Int("workers", 100, "Amount of worker clients")
 	eventTypes  = []string{
 		"session_start",
 		"session_end",
@@ -61,12 +61,16 @@ func startClient(wsUrl, name string, sync chan int) {
 	conn := rpc.NewClientWithCodec(codec)
 
 	var reply int
+	var event *Event
 	for {
-		err = conn.Call(proName, generateEvent(), &reply)
+		event = generateEvent()
+		err = conn.Call(proName, event, &reply)
 		if err != nil {
 			log.Println("RPC Error: ", err)
 		}
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		log.Printf("Sent %v\n", event.EventType)
+		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		time.Sleep(250 * time.Millisecond)
 	}
 }
 

@@ -35,4 +35,4 @@ export:
 		FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';)
 	@ MYSQL_PWD=$(db_pwd) mysql -u analytics analytics -D analytics -e "$(query)"
 	@ echo "Uploading to S3...";
-	aws s3 cp $(dump_path) s3://my-bucket/
+	@ aws s3 cp $(dump_path) s3://my-bucket/
