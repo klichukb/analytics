@@ -1,10 +1,11 @@
-package main
+package server
 
 import "time"
 import "fmt"
 import "database/sql"
 import _ "github.com/go-sql-driver/mysql"
 import "encoding/json"
+import "analytics/shared"
 import "os"
 
 var (
@@ -14,7 +15,7 @@ var (
 )
 
 // Connect to DB and return DB instance.
-func getDatabase() *sql.DB {
+func GetDatabase() *sql.DB {
 	conn := fmt.Sprintf("%s:%s@/%s", dbUser, dbPwd, dbName)
 	db, err := sql.Open("mysql", conn)
 	if err != nil {
@@ -26,7 +27,7 @@ func getDatabase() *sql.DB {
 
 // Writes event object to database.
 // Serializes params to JSON.
-func saveEvent(event *Event) error {
+func SaveEvent(event *shared.Event) error {
 	jsonParams, err := json.Marshal(event.Params)
 
 	if err != nil {
@@ -34,7 +35,7 @@ func saveEvent(event *Event) error {
 	}
 
 	// ORM looks like overkill at the moment.
-	_, dbErr := db.Exec(`
+	_, dbErr := DB.Exec(`
         INSERT INTO analytics_event (event_type, ts, params)
         VALUES (?, ?, ?)
         `, event.EventType, time.Unix(int64(event.TS), 0), jsonParams,

@@ -1,11 +1,12 @@
-package main
+package server
 
 import "errors"
 import "log"
+import "analytics/shared"
 
 type Analytics int
 
-func (comm *Analytics) TrackEvent(event *Event, reply *int) error {
+func (comm *Analytics) TrackEvent(event *shared.Event, reply *int) error {
 	if len(event.EventType) == 0 || event.TS == 0 {
 		// invalid parameters
 		return errors.New("Invalid event data")
@@ -13,7 +14,7 @@ func (comm *Analytics) TrackEvent(event *Event, reply *int) error {
 	log.Println("Event received:", event, &event)
 
 	// persist to database
-	err := saveEvent(event)
+	err := SaveEvent(event)
 	if err != nil {
 		return err
 	}

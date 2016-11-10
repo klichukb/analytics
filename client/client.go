@@ -1,30 +1,18 @@
-package main
+package client
 
 import (
-	"flag"
+	"analytics/shared"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"math/rand"
 	"net/rpc"
 	"net/rpc/jsonrpc"
-	"net/url"
 	"time"
 )
 
-// Flags
-var (
-	address     = flag.String("address", ":8000", "Websocket server address")
-	workerCount = flag.Int("workers", 100, "Amount of worker clients")
-	eventTypes  = []string{
-		"session_start",
-		"session_end",
-		"link_clicked",
-	}
-)
-
 const (
-	wsRoot  = "/ws"
+	WsRoot  = "/ws"
 	proName = "Analytics.TrackEvent"
 )
 
@@ -33,19 +21,19 @@ var wsDialer = websocket.Dialer{
 	WriteBufferSize: 4096,
 }
 
-func generateEvent() *Event {
-	eventType := eventTypes[rand.Intn(len(eventTypes))]
+func GenerateEvent() *shared.Event {
+	eventType := shared.EventTypes[rand.Intn(len(shared.EventTypes))]
 	params := map[string]interface{}{
 		"var_a": 123,
 		"var_b": "Foobar",
 		"var_c": []int{42, 42, 84, 1, 0, 1},
 	}
-	return &Event{eventType, int(time.Now().Unix()), params}
+	return &shared.Event{eventType, int(time.Now().Unix()), params}
 }
 
 // Creates a websocket on `wsUrl` URL.
 // Start single client message loop.
-func startClient(wsUrl, name string, sync chan int) {
+func StartClient(wsUrl, name string, sync chan int) {
 	ws, _, err := wsDialer.Dial(wsUrl, nil)
 	if err != nil {
 		log.Println("ERROR: ", err)
@@ -56,14 +44,14 @@ func startClient(wsUrl, name string, sync chan int) {
 		sync <- 0
 	}()
 
-	wrapper := &WebSocketWrapper{ws: ws}
+	wrapper := &shared.WebSocketWrapper{WS: ws}
 	codec := jsonrpc.NewClientCodec(wrapper)
 	conn := rpc.NewClientWithCodec(codec)
 
 	var reply int
-	var event *Event
+	var event *shared.Event
 	for {
-		event = generateEvent()
+		event = GenerateEvent()
 		err = conn.Call(proName, event, &reply)
 		if err != nil {
 			log.Println("RPC Error: ", err)
@@ -76,19 +64,13 @@ func startClient(wsUrl, name string, sync chan int) {
 
 // Connects to websocket on `wsUrl` URL.
 // Launches `workerCount` clients that spam server with messages.
-func startSimulation(wsUrl string, workerCount int) {
+func StartSimulation(wsUrl string, workerCount int) {
 	sync := make(chan int)
 	for n := 0; n < workerCount; n++ {
-		go startClient(wsUrl, fmt.Sprintf("Client[%d]", n+1), sync)
+		go StartClient(wsUrl, fmt.Sprintf("Client[%d]", n+1), sync)
 	}
 	// wait for all workers
 	for n := 0; n < workerCount; n++ {
 		<-sync
 	}
-}
-
-func main() {
-	flag.Parse()
-	wsUrl := url.URL{Scheme: "ws", Host: *address, Path: wsRoot}
-	startSimulation(wsUrl.String(), *workerCount)
 }

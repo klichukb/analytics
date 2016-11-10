@@ -1,8 +1,8 @@
-package main
+package server
 
 import (
+	"analytics/shared"
 	"database/sql"
-	"flag"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -11,14 +11,11 @@ import (
 	"time"
 )
 
-// Flags
-var (
-	address = flag.String("address", ":8000", "Websocket server address")
-	db      *sql.DB
-)
+var DB *sql.DB
 
 const (
-	wsRoot    = "/ws"
+	WsRoot = "/ws"
+
 	readLimit = 4096
 	// time to wait for write to complete
 	writeWait = 15 * time.Second
@@ -33,14 +30,14 @@ var wsUpgrader = websocket.Upgrader{
 }
 
 // Sets read deadline to `now` + `pongWait`.
-func updateReadDeadline(ws *websocket.Conn) {
+func UpdateReadDeadline(ws *websocket.Conn) {
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 }
 
 // Launch a loop of pings, based on timer.
 // Will however obey to `closing` channel and stop the loop
 // whenver channel gets closed from outside.
-func startPinging(ws *websocket.Conn, closing chan struct{}) {
+func StartPinging(ws *websocket.Conn, closing chan struct{}) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 
@@ -62,23 +59,23 @@ func startPinging(ws *websocket.Conn, closing chan struct{}) {
 
 // Start infinite listen loop to a websocket connection.
 // Reads incoming messages, does not respond in order to spare traffic.
-func handleConnection(ws *websocket.Conn) {
+func HandleConnection(ws *websocket.Conn) {
 	ws.SetReadLimit(readLimit)
-	updateReadDeadline(ws)
+	UpdateReadDeadline(ws)
 
 	// make sure we know how to handle response.
 	ws.SetPongHandler(func(appData string) error {
 		log.Println("[Pong]")
 		// update read deadline after pong
-		updateReadDeadline(ws)
+		UpdateReadDeadline(ws)
 		return nil
 	})
 
 	closing := make(chan struct{})
 	defer close(closing)
-	go startPinging(ws, closing)
+	go StartPinging(ws, closing)
 
-	wrapper := &WebSocketWrapper{ws: ws}
+	wrapper := &shared.WebSocketWrapper{WS: ws}
 	server := rpc.NewServer()
 
 	// register API
@@ -93,7 +90,7 @@ func handleConnection(ws *websocket.Conn) {
 // Connection: Upgrade
 // Listens infinitely for new messages.
 // Allowed methods: GET.
-func handleRequest(w http.ResponseWriter, r *http.Request) {
+func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Println("New connection")
 	// Upgrader also checks this while attempting to upgrade, but in order
 	// to be independent from it's implementation details, we check explicitly.
@@ -110,20 +107,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer ws.Close()
-	handleConnection(ws)
+	HandleConnection(ws)
 }
 
-func main() {
-	flag.Parse()
-
-	db = getDatabase()
-	defer db.Close()
-
-	http.HandleFunc(wsRoot, handleRequest)
-	log.Println("Serving...")
-
-	err := http.ListenAndServe(*address, nil)
-	if err != nil {
-		log.Fatal("Server error:", err)
-	}
+func InitDatabase() {
+	DB = GetDatabase()
 }
