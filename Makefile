@@ -17,7 +17,7 @@ dump_dir=/usr/local/mysql/dumps
 db_user=analytics
 db_pwd=analytics
 db=analytics
-s3_bucket=my-bucket
+s3_bucket=elasticbeanstalk-us-west-2-422680256038
 
 server:
 	@ MYSQL_USER=$(db_user) MYSQL_PWD=$(db_pwd) MYSQL_DB=$(db) \
@@ -35,5 +35,7 @@ export:
 		INTO OUTFILE '$(dump_path)' \
 		FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';)
 	@ MYSQL_PWD=$(db_pwd) mysql -u analytics analytics -D analytics -e "$(query)"
+	@ bzip2 $(dump_path)
 	@ echo "Uploading to S3...";
-	@ aws s3 cp $(dump_path) s3://$(s3_bucket)/
+	@ aws s3 cp $(dump_path).bz2 s3://$(s3_bucket)/
+	@ echo "Done."
