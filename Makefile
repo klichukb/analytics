@@ -6,6 +6,11 @@
 # 	 make clients - launch mock clients.
 # 	 make export - dump database CSV of analytics event for current day.
 #
+# Run this script daily at the time of minimum load to upload dialy dump
+# to S3 storage. Modify optionally to clean up local database using some
+# strategy, for example by removing all records older than 2 days, and thus
+# allowing to resolve any poissible inconsistencies.
+#
 # # # #
 
 dump_dir=/usr/local/mysql/dumps
@@ -29,3 +34,5 @@ export:
 		INTO OUTFILE '$(dump_path)' \
 		FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';)
 	@ MYSQL_PWD=$(db_pwd) mysql -u analytics analytics -D analytics -e "$(query)"
+	@ echo "Uploading to S3...";
+	aws s3 cp $(dump_path) s3://my-bucket/
