@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"time"
 )
 
@@ -23,7 +26,7 @@ const (
 	readLimit = 4096
 	// time to wait for write to complete
 	writeWait = 10 * time.Second
-	pongWait  = 120 * time.Second
+	pongWait  = 6 * time.Second
 	// twice as small as time to wait for a pong back
 	pingPeriod = pongWait / 2
 )
@@ -33,12 +36,26 @@ var wsUpgrader = websocket.Upgrader{
 	WriteBufferSize: 4096,
 }
 
+func (comm *Analytics) TrackEvent(event *Event, reply *int) error {
+	if len(event.EventType) == 0 || event.TS == 0 {
+		// invalid parameters
+		*reply = 1
+		return errors.New("Invalid event data")
+	}
+	log.Println("Event received:", event, &event)
+	*reply = 0
+	return nil
+}
+
 // Sets read deadline to `now` + `pongWait`.
 func updateReadDeadline(ws *websocket.Conn) {
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 }
 
-func startPinging(ws *websocket.Conn, closing, pingFailed chan struct{}) {
+// Launch a loop of pings, based on timer.
+// Will however obey to `closing` channel and stop the loop
+// whenver channel gets closed from outside.
+func startPinging(ws *websocket.Conn, closing chan struct{}) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 
@@ -49,7 +66,6 @@ func startPinging(ws *websocket.Conn, closing, pingFailed chan struct{}) {
 			err := ws.WriteMessage(websocket.PingMessage, []byte{})
 			if err != nil {
 				log.Println("PING ERROR:", err)
-				close(pingFailed)
 				return
 			}
 			log.Println("[Ping]")
@@ -61,10 +77,7 @@ func startPinging(ws *websocket.Conn, closing, pingFailed chan struct{}) {
 
 // Start infinite listen loop to a websocket connection.
 // Reads incoming messages, does not respond in order to spare traffic.
-// TODO: Sends pings with `pingPeriod` frequency. Handles pongs.
 func handleConnection(ws *websocket.Conn) {
-	defer ws.Close()
-
 	ws.SetReadLimit(readLimit)
 	updateReadDeadline(ws)
 
@@ -77,38 +90,17 @@ func handleConnection(ws *websocket.Conn) {
 	})
 
 	closing := make(chan struct{})
-	pingFailed := make(chan struct{})
+	defer close(closing)
+	go startPinging(ws, closing)
 
-	go startPinging(ws, closing, pingFailed)
+	wrapper := &WebSocketWrapper{ws: ws}
+	server := rpc.NewServer()
 
-loop:
-	for {
-		// check the sentinel channel.
-		// if ping ever failed, stop the loop
-		select {
-		case <-pingFailed:
-			break loop
-		default:
-		}
+	// register API
+	server.Register(new(Analytics))
 
-		msgType, msg, err := ws.ReadMessage()
-		if err != nil {
-			log.Printf("ERROR: ", err)
-			// in case this error means that client goes down or leaves, we stop
-			// serving it, otherwise just continue it never happened.
-			if websocket.IsUnexpectedCloseError(err, fatalCodes...) {
-				break
-			}
-			continue
-		}
-		var result interface{}
-		if msgType == websocket.TextMessage {
-			result = string(msg)
-		} else {
-			result = msg
-		}
-		log.Printf("MSG: [%v][type = %v] %v\n", len(msg), msgType, result)
-	}
+	codec := jsonrpc.NewServerCodec(wrapper)
+	server.ServeCodec(codec)
 }
 
 // Handle HTTP request: upgrade it to websocket by replying with two headers
@@ -132,6 +124,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer ws.Close()
 	handleConnection(ws)
 }
 
