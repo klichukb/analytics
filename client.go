@@ -6,6 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"math/rand"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"net/url"
 	"time"
 )
@@ -13,7 +15,7 @@ import (
 // Flags
 var (
 	address     = flag.String("address", ":8000", "Websocket server address")
-	workerCount = flag.Int("workers", 1, "Amount of worker clients")
+	workerCount = flag.Int("workers", 4, "Amount of worker clients")
 	fatalCodes  = []int{
 		websocket.CloseGoingAway,
 		websocket.CloseMandatoryExtension,
@@ -22,7 +24,8 @@ var (
 )
 
 const (
-	wsRoot = "/ws"
+	wsRoot  = "/ws"
+	proName = "Analytics.TrackEvent"
 )
 
 var wsDialer = websocket.Dialer{
@@ -30,19 +33,13 @@ var wsDialer = websocket.Dialer{
 	WriteBufferSize: 4096,
 }
 
-// This function runs in seprate goroutine to ensure we ever receive pings.
-// Without a reading goroutine, pings do not arrive.
-func readData(ws *websocket.Conn, closing chan struct{}) {
-	for {
-		// a watchman channel signaling that current client is not served
-		// anymore, which means that we should quit the loop.
-		select {
-		case <-closing:
-			return
-		default:
-		}
-		ws.ReadMessage()
+func generateEvent() *Event {
+	params := map[string]interface{}{
+		"var_a": 123,
+		"var_b": "Foobar",
+		"var_c": []int{42, 42, 84, 1, 0, 1},
 	}
+	return &Event{"PageView", int(time.Now().Unix()), params}
 }
 
 // Creates a websocket on `wsUrl` URL.
@@ -53,23 +50,20 @@ func startClient(wsUrl, name string, sync chan int) {
 		log.Println("ERROR: ", err)
 	}
 
-	closing := make(chan struct{})
-	// close and signal about exiting
 	defer func() {
 		ws.Close()
 		sync <- 0
-		close(closing)
 	}()
 
-	message := []byte("Hello!")
+	wrapper := &WebSocketWrapper{ws: ws}
+	codec := jsonrpc.NewClientCodec(wrapper)
+	conn := rpc.NewClientWithCodec(codec)
 
-	// launch sentinel reader goroutine
-	go readData(ws, closing)
-
+	var reply int
 	for {
-		if err := ws.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Println("ERROR: ", err)
-			return
+		err = conn.Call(proName, generateEvent(), &reply)
+		if err != nil {
+			log.Println("RPC Error: ", err)
 		}
 		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 	}
