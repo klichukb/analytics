@@ -12,6 +12,9 @@ func (comm *Analytics) TrackEvent(event *Event, reply *int) error {
 		return errors.New("Invalid event data")
 	}
 	log.Println("Event received:", event, &event)
+
+	// persist to database
+	saveEvent(event)
 	*reply = 0
 	return nil
 }
