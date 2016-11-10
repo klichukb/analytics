@@ -5,5 +5,3 @@ type Event struct {
 	TS        int
 	Params    map[string]interface{}
 }
-
-type Analytics int

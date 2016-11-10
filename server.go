@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"github.com/gorilla/websocket"
 	"log"
@@ -34,17 +33,6 @@ const (
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  4096,
 	WriteBufferSize: 4096,
-}
-
-func (comm *Analytics) TrackEvent(event *Event, reply *int) error {
-	if len(event.EventType) == 0 || event.TS == 0 {
-		// invalid parameters
-		*reply = 1
-		return errors.New("Invalid event data")
-	}
-	log.Println("Event received:", event, &event)
-	*reply = 0
-	return nil
 }
 
 // Sets read deadline to `now` + `pongWait`.
