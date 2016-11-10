@@ -19,12 +19,11 @@ db_pwd=analytics
 db=analytics
 s3_bucket=elasticbeanstalk-us-west-2-422680256038
 
-server:
-	@ MYSQL_USER=$(db_user) MYSQL_PWD=$(db_pwd) MYSQL_DB=$(db) \
-	  go run wrapper.go models.go api.go db.go server.go
+runserver:
+	@ MYSQL_USER=$(db_user) MYSQL_PWD=$(db_pwd) MYSQL_DB=$(db) $(GOPATH)/bin/runner --mode server
 
-clients:
-	@ go run wrapper.go models.go client.go
+runclient:
+	@ $(GOPATH)/bin/runner --mode client
 
 export:
 	$(eval dump_path=$(dump_dir)/dump_$(shell date "+%Y_%m_%d").csv)
