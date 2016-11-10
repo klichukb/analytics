@@ -6,7 +6,6 @@ import "database/sql"
 import _ "github.com/go-sql-driver/mysql"
 import "encoding/json"
 import "os"
-import "log"
 
 var (
 	dbName = os.Getenv("MYSQL_DB")
@@ -17,7 +16,6 @@ var (
 // Connect to DB and return DB instance.
 func getDatabase() *sql.DB {
 	conn := fmt.Sprintf("%s:%s@/%s", dbUser, dbPwd, dbName)
-	log.Println(conn)
 	db, err := sql.Open("mysql", conn)
 	if err != nil {
 		db.Close()
