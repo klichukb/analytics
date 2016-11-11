@@ -20,10 +20,10 @@ db=analytics
 s3_bucket=elasticbeanstalk-us-west-2-422680256038
 
 runserver:
-	@ MYSQL_USER=$(db_user) MYSQL_PWD=$(db_pwd) MYSQL_DB=$(db) $(GOPATH)/bin/runner --mode server
+	@ MYSQL_USER=$(db_user) MYSQL_PWD=$(db_pwd) MYSQL_DB=$(db) $(GOPATH)bin/analytics --mode server
 
 runclient:
-	@ $(GOPATH)/bin/runner --mode client
+	@ $(GOPATH)bin/analytics --mode client
 
 export:
 	$(eval dump_path=$(dump_dir)/dump_$(shell date "+%Y_%m_%d").csv)
