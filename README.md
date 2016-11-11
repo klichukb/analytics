@@ -75,3 +75,8 @@ We can also slice dumps by event type, in general my assumptions regarding futur
 ### Source code
 
 Unit tests aren't covering much - still switching from Python world. Small integration test runs client/server for couple of messages.ocial Analytics aggregation.
+
+
+### Benchmarking
+
+On quad core i7 with 16GB memory server managed to be capable of handling 1500-2500 requests per second.
