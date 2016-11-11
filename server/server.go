@@ -111,5 +111,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitDatabase() {
+	if DB != nil {
+		return
+	}
 	DB = GetDatabase()
 }

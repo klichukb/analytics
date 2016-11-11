@@ -21,6 +21,9 @@ var wsDialer = websocket.Dialer{
 	WriteBufferSize: 4096,
 }
 
+// Infinitely spamming server.
+var Iterations int = -1
+
 func GenerateEvent() *shared.Event {
 	eventType := shared.EventTypes[rand.Intn(len(shared.EventTypes))]
 	params := map[string]interface{}{
@@ -50,14 +53,22 @@ func StartClient(wsUrl, name string, sync chan int) {
 
 	var reply int
 	var event *shared.Event
+	iters := Iterations
+
 	for {
+		// -1 means infinite loop
+		if iters == 0 {
+			break
+		} else if iters > 0 {
+			iters--
+		}
+
 		event = GenerateEvent()
 		err = conn.Call(proName, event, &reply)
 		if err != nil {
 			log.Println("RPC Error: ", err)
 		}
 		log.Printf("Sent %v\n", event.EventType)
-		// time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
 		time.Sleep(250 * time.Millisecond)
 	}
 }
