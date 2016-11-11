@@ -1,3 +1,5 @@
+// Database handling for server side of analytics application.
+
 package server
 
 import (
@@ -10,6 +12,8 @@ import (
 	"time"
 )
 
+// Credentials and target database for database connection.
+// Make sure to mock these for test suite.
 var (
 	DbName   = os.Getenv("MYSQL_DB")
 	DbUser   = os.Getenv("MYSQL_USER")
@@ -31,6 +35,8 @@ func GetDatabase() *sql.DB {
 // Writes event object to database.
 // Serializes params to JSON.
 func SaveEvent(event *shared.Event) error {
+	// Params are stores as JSON since amount and type of values in these
+	// varies.
 	jsonParams, err := json.Marshal(event.Params)
 
 	if err != nil {

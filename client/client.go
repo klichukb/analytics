@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	WsRoot  = "/ws"
+	// Root URL that websocket is served on.
+	WsRoot = "/ws"
+	// Name of procedure to execute via RPC.
 	proName = "Analytics.TrackEvent"
 )
 
@@ -25,6 +27,7 @@ var wsDialer = websocket.Dialer{
 // Infinitely spamming server.
 var Iterations int = -1
 
+// Creates a sample event with random event type and mock params data.
 func GenerateEvent() *shared.Event {
 	eventType := shared.EventTypes[rand.Intn(len(shared.EventTypes))]
 	params := map[string]interface{}{
@@ -54,10 +57,13 @@ func StartClient(wsUrl, name string, sync chan int) {
 
 	var reply int
 	var event *shared.Event
+	// We count iterations down if they are > 0.
+	// Zero iterations will exit function, right away,
+	// -1 iterations will spin forever, which is default value.
 	iters := Iterations
 
 	for {
-		// -1 means infinite loop
+		// reduce is > 0, -1 keeps spinning.
 		if iters == 0 {
 			break
 		} else if iters > 0 {
@@ -65,6 +71,7 @@ func StartClient(wsUrl, name string, sync chan int) {
 		}
 
 		event = GenerateEvent()
+		// sends event to server
 		err = conn.Call(proName, event, &reply)
 		if err != nil {
 			log.Println("RPC Error: ", err)

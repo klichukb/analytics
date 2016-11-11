@@ -1,3 +1,6 @@
+// Defines API for RPC of server.
+// type Analytics struct -- a structure that servers for exposing public functionality
+// to RPC API.
 package server
 
 import (

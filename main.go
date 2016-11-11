@@ -1,3 +1,18 @@
+// Launches a server/client for Websockes + JSON-RPC communication.
+// Works in both modes.
+
+// Use --mode option to choose: (server|client)
+
+// For client --workers option sets quantity of clients spinning.
+// Both support --address option.
+
+// Examples:
+// Start server
+//    analytics --mode server
+//
+// Start 10 concurrent clients.
+//    analytics --mode client --workers 10
+
 package main
 
 import (
@@ -32,6 +47,7 @@ func runServer() {
 // Launch test clients to feed the server.
 func runClient() {
 	wsUrl := url.URL{Scheme: "ws", Host: *address, Path: client.WsRoot}
+	// Starts `workerCount` clients.
 	client.StartSimulation(wsUrl.String(), *workerCount)
 }
 
@@ -45,8 +61,10 @@ func main() {
 	flag.Parse()
 
 	handler := modes[*mode]
+	// Only run supported modes, otherwise fail & bye.
 	if handler == nil {
 		log.Fatal("Unsupported mode")
 	}
+	// Runs either client or server
 	handler()
 }

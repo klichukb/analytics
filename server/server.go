@@ -13,16 +13,20 @@ import (
 	"time"
 )
 
+// Connection object, should be initialized manually.
+// For convenience - use `InitDatabase` function.
 var DB *sql.DB
 
 const (
+	// Root URL that websocket is accessed via.
 	WsRoot = "/ws"
-
+	// Maximum size of the message that can be read.
 	readLimit = 4096
-	// time to wait for write to complete
+	// Time to wait for write to complete before it's considered timed out.
 	writeWait = 15 * time.Second
-	pongWait  = 120 * time.Second
-	// twice as small as time to wait for a pong back
+	// Maximum time awaited for a pong back.
+	pongWait = 120 * time.Second
+	// Frequency of pings
 	pingPeriod = pongWait / 2
 )
 
@@ -46,6 +50,8 @@ func StartPinging(ws *websocket.Conn, closing chan struct{}) {
 	for {
 		select {
 		case <-ticker.C:
+			// Tick: time to send a ping
+			// Limit the following write with a deadline.
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
 			err := ws.WriteMessage(websocket.PingMessage, []byte{})
 			if err != nil {
@@ -54,6 +60,8 @@ func StartPinging(ws *websocket.Conn, closing chan struct{}) {
 			}
 			log.Println("[Ping]")
 		case <-closing:
+			// If this case worked, either data has been written to the channel,
+			// or it has been closed - nothing to serve, stop sending pings.
 			return
 		}
 	}
@@ -74,7 +82,10 @@ func HandleConnection(ws *websocket.Conn) {
 	})
 
 	closing := make(chan struct{})
+	// pinger will receive this signal in order to exit it's gouroutine
 	defer close(closing)
+
+	// start pinging client periodically
 	go StartPinging(ws, closing)
 
 	wrapper := &shared.WebSocketWrapper{WS: ws}
@@ -83,6 +94,7 @@ func HandleConnection(ws *websocket.Conn) {
 	// register API
 	server.Register(new(Analytics))
 
+	// start serving JSON-RPC
 	codec := jsonrpc.NewServerCodec(wrapper)
 	server.ServeCodec(codec)
 }
@@ -109,9 +121,11 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer ws.Close()
+	// begin the serving fun.
 	HandleConnection(ws)
 }
 
+// A convenience function to initialize database connection
 func InitDatabase() {
 	if DB != nil {
 		return
