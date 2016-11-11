@@ -11,15 +11,16 @@ import (
 )
 
 var (
-	dbName = os.Getenv("MYSQL_DB")
-	dbUser = os.Getenv("MYSQL_USER")
-	dbPwd  = os.Getenv("MYSQL_PWD")
+	DbName   = os.Getenv("MYSQL_DB")
+	DbUser   = os.Getenv("MYSQL_USER")
+	DbPwd    = os.Getenv("MYSQL_PWD")
+	DbDriver = "mysql"
 )
 
 // Connect to DB and return DB instance.
 func GetDatabase() *sql.DB {
-	conn := fmt.Sprintf("%s:%s@/%s", dbUser, dbPwd, dbName)
-	db, err := sql.Open("mysql", conn)
+	conn := fmt.Sprintf("%s:%s@/%s", DbUser, DbPwd, DbName)
+	db, err := sql.Open(DbDriver, conn)
 	if err != nil {
 		db.Close()
 		panic(err.Error())
