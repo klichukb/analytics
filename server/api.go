@@ -6,8 +6,10 @@ import (
 	"log"
 )
 
+// Api object that exports its methods to RPC.
 type Analytics struct{}
 
+// Process/persist event data.
 func (comm *Analytics) TrackEvent(event *shared.Event, reply *int) error {
 	if len(event.EventType) == 0 || event.TS == 0 {
 		// invalid parameters

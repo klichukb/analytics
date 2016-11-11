@@ -16,6 +16,8 @@ var (
 	testDbPwd  = "analytics"
 )
 
+// Tests interaction between client/server.
+// Writes several messages from client to server and ensures events got written to DB.
 func TestClientServer(t *testing.T) {
 	// common mock flag parameters
 	*address = ":8111"
@@ -41,6 +43,8 @@ func TestClientServer(t *testing.T) {
 	}
 }
 
+// Sets up test database and tears down in the end.
+// Clears data from events table.
 func TestMain(m *testing.M) {
 	// Setup
 	// mock DB

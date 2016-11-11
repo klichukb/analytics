@@ -15,6 +15,7 @@ var (
 	workerCount = flag.Int("workers", 100, "Amount of worker clients")
 )
 
+// Launch server on default port
 func runServer() {
 	server.InitDatabase()
 	defer server.DB.Close()
@@ -28,11 +29,13 @@ func runServer() {
 	}
 }
 
+// Launch test clients to feed the server.
 func runClient() {
 	wsUrl := url.URL{Scheme: "ws", Host: *address, Path: client.WsRoot}
 	client.StartSimulation(wsUrl.String(), *workerCount)
 }
 
+// Maps options
 var modes = map[string]func(){
 	"server": runServer,
 	"client": runClient,
@@ -42,5 +45,8 @@ func main() {
 	flag.Parse()
 
 	handler := modes[*mode]
+	if handler == nil {
+		log.Fatal("Unsupported mode")
+	}
 	handler()
 }

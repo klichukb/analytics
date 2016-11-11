@@ -1,3 +1,4 @@
+// Package holds logic of test clients for websocket+JSON-RPC communication.
 package client
 
 import (

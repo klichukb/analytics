@@ -1,3 +1,5 @@
+// Package provides functonality for websocket+JSON-RPC server for aggregating
+// event data.
 package server
 
 import (
