@@ -21,6 +21,7 @@ MySQL.
 Pros:
 * Relational - can be good for complex queries involving different research of analytical data on customer's dashboard.
 * Scales horizontally. Tools like MySQL Cluster and MySQL Fabric (makes as well sense to have while processing aggregated data).
+* Industry standard.
 
 Cons:
 * Is said to have stability issues sometimes.
@@ -68,7 +69,7 @@ Querying database for questions like "all events of type X during last 24 hours"
 
 We can also slice dumps by event type, in general my assumptions regarding future use are following:
 * Most likely we'll want to be able to show to customer all events their app is generating. Reports, views etc. But accessing 
-* Future data access patterns are yet uknown, but I assume we'll have some kind of App ID/Customer ID, that we'll be writing into event table as well. In that case we'll want one custom to be able to access his data as quickly as possible. This assumption leads to possible sharding by App/Customer ID or range of such. Data could be dumped regularily per user and stored like that for further processing.
+* Future data access patterns are yet uknown, but I assume we'll have some kind of App ID/Customer ID, that we'll be writing into event table as well. In that case we'll want one customer to be able to access his data as quickly as possible. This assumption leads to possible sharding by App/Customer ID or range of such. Data could be dumped regularily per user and stored like that for further processing.
 
 
 ### Source code
