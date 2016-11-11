@@ -74,7 +74,7 @@ We can also slice dumps by event type, in general my assumptions regarding futur
 
 ### Source code
 
-Unit tests aren't covering much - still switching from Python world. Small integration test runs client/server for couple of messages.ocial Analytics aggregation.
+Unit tests aren't covering much - still switching from Python world. Small integration test runs client/server for couple of messages.
 
 
 ### Benchmarking
