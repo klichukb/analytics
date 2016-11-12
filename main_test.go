@@ -27,6 +27,8 @@ func TestClientServer(t *testing.T) {
 
 	// graceful wait for server
 	time.Sleep(100 * time.Millisecond)
+	// sets buffer of analytics object created by server
+	analytics.MaxBufferSize = 4
 
 	// client runner
 	*workerCount = 2

@@ -36,7 +36,7 @@ func TestSaveEvent(t *testing.T) {
 		`INSERT INTO analytics_event`,
 	).WithArgs("session_start", tm, []byte(`{"key1":123,"key2":"value2"}`))
 
-	SaveEvent(event)
+	SaveEvents(event)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Unfulfilled expectations from `SaveEvent`: %s", err)

@@ -28,6 +28,7 @@ var (
 	mode        = flag.String("mode", "server", "Use `server` or `client`")
 	address     = flag.String("address", ":8000", "Websocket address")
 	workerCount = flag.Int("workers", 100, "Amount of worker clients")
+	analytics   *server.Analytics
 )
 
 // Launch server on default port
@@ -35,7 +36,8 @@ func runServer() {
 	server.InitDatabase()
 	defer server.DB.Close()
 
-	analytics := server.NewAnalytics()
+	analytics = server.NewAnalytics()
+	go server.WatchEventBuffer(analytics)
 	http.HandleFunc(server.WsRoot, func(w http.ResponseWriter, r *http.Request) {
 		server.HandleRequest(analytics, w, r)
 	})

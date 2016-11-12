@@ -19,12 +19,14 @@ type Analytics struct {
 
 	// set to true in order to kill event buffer watcher goroutine
 	StopBufferWatch chan int
+	// size of buffer. events won't be written until buffer fills up
+	// or a watcher flushes manually. Default = 100
+	MaxBufferSize int
+	// timer for a watcher goroutine to check buffer to flush
+	// and time needed to pass after last event in order to flush.
+	// default = 500 milliseconds.
+	FlushTimeout time.Duration
 }
-
-var (
-	MaxBufferSize = 100
-	FlushTimeout  = 500 * time.Millisecond
-)
 
 // Flush event buffer to DB in case it's not empty.
 func (analytics *Analytics) flushEventBuffer() error {
@@ -41,9 +43,10 @@ func (analytics *Analytics) flushEventBuffer() error {
 }
 
 // Watches for any leftover buffer to flush when there have been
-// no new events coming in recently.
-func (analytics *Analytics) watchEventBuffer() {
-	ticker := time.NewTicker(FlushTimeout)
+// no new events coming in recently. This is function, not method
+// in order not to export it to RPC.
+func WatchEventBuffer(analytics *Analytics) {
+	ticker := time.NewTicker(analytics.FlushTimeout)
 	for {
 		select {
 		case <-ticker.C:
@@ -54,7 +57,7 @@ func (analytics *Analytics) watchEventBuffer() {
 				defer analytics.mu.Unlock()
 
 				// flush the event buffer if `FlushTimeout` has pased since last event coming in.
-				if time.Since(analytics.lastEvent) >= FlushTimeout {
+				if time.Since(analytics.lastEvent) >= analytics.FlushTimeout {
 					analytics.flushEventBuffer()
 				}
 			}()
@@ -68,9 +71,10 @@ func (analytics *Analytics) watchEventBuffer() {
 // that watches for any leftover buffer to flush when there have been
 // no new events coming in recently.
 func NewAnalytics() *Analytics {
-	analytics := &Analytics{lastEvent: time.Now(), StopBufferWatch: make(chan int)}
-	go analytics.watchEventBuffer()
-	return analytics
+	return &Analytics{
+		lastEvent: time.Now(), StopBufferWatch: make(chan int),
+		MaxBufferSize: 100, FlushTimeout: 500 * time.Millisecond,
+	}
 }
 
 // Save event to buffer/DB.
@@ -80,14 +84,14 @@ func (analytics *Analytics) addEvent(event *shared.Event) error {
 	analytics.mu.Lock()
 	defer analytics.mu.Unlock()
 
-	if len(analytics.eventBuffer) >= MaxBufferSize {
+	analytics.eventBuffer = append(analytics.eventBuffer, event)
+	analytics.lastEvent = time.Now()
+
+	if len(analytics.eventBuffer) >= analytics.MaxBufferSize {
 		// flush buffer - persist to database
 		return analytics.flushEventBuffer()
-	} else {
-		analytics.eventBuffer = append(analytics.eventBuffer, event)
-		analytics.lastEvent = time.Now()
-		return nil
 	}
+	return nil
 }
 
 // Process event data.

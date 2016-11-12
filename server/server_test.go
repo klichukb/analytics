@@ -22,7 +22,8 @@ func getTestRequest(method string) *http.Request {
 
 func TestHandleRequest_405(t *testing.T) {
 	w := httptest.NewRecorder()
-	HandleRequest(w, getTestRequest("POST"))
+	analytics := NewAnalytics()
+	HandleRequest(analytics, w, getTestRequest("POST"))
 	if w.Code != 405 {
 		t.Error("Non-GET methods should not be allowed")
 	}
