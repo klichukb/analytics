@@ -35,7 +35,11 @@ func runServer() {
 	server.InitDatabase()
 	defer server.DB.Close()
 
-	http.HandleFunc(server.WsRoot, server.HandleRequest)
+	analytics := server.NewAnalytics()
+	http.HandleFunc(server.WsRoot, func(w http.ResponseWriter, r *http.Request) {
+		server.HandleRequest(analytics, w, r)
+	})
+
 	log.Println("Serving...")
 
 	err := http.ListenAndServe(*address, nil)

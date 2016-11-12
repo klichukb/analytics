@@ -79,4 +79,4 @@ Unit tests aren't covering much - still switching from Python world. Small integ
 
 ### Benchmarking
 
-On quad core i7 with 16GB memory server managed to be capable of handling 1500-2500 requests per second.
+On quad core i7 with 16GB memory server managed to be capable of handling 4500-5500 requests per second.

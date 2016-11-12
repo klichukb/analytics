@@ -69,7 +69,7 @@ func StartPinging(ws *websocket.Conn, closing chan struct{}) {
 
 // Start infinite listen loop to a websocket connection.
 // Reads incoming messages, does not respond in order to spare traffic.
-func HandleConnection(ws *websocket.Conn) {
+func HandleConnection(ws *websocket.Conn, analytics *Analytics) {
 	ws.SetReadLimit(readLimit)
 	UpdateReadDeadline(ws)
 
@@ -92,7 +92,7 @@ func HandleConnection(ws *websocket.Conn) {
 	server := rpc.NewServer()
 
 	// register API
-	server.Register(new(Analytics))
+	server.Register(analytics)
 
 	// start serving JSON-RPC
 	codec := jsonrpc.NewServerCodec(wrapper)
@@ -104,7 +104,7 @@ func HandleConnection(ws *websocket.Conn) {
 // Connection: Upgrade
 // Listens infinitely for new messages.
 // Allowed methods: GET.
-func HandleRequest(w http.ResponseWriter, r *http.Request) {
+func HandleRequest(analytics *Analytics, w http.ResponseWriter, r *http.Request) {
 	log.Println("New connection")
 	// Upgrader also checks this while attempting to upgrade, but in order
 	// to be independent from it's implementation details, we check explicitly.
@@ -122,7 +122,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	defer ws.Close()
 	// begin the serving fun.
-	HandleConnection(ws)
+	HandleConnection(ws, analytics)
 }
 
 // A convenience function to initialize database connection

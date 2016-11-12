@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/klichukb/analytics/shared"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -34,20 +35,26 @@ func GetDatabase() *sql.DB {
 
 // Writes event object to database.
 // Serializes params to JSON.
-func SaveEvent(event *shared.Event) error {
-	// Params are stores as JSON since amount and type of values in these
-	// varies.
-	jsonParams, err := json.Marshal(event.Params)
+func SaveEvents(events ...*shared.Event) error {
+	// Params are stores as JSON since amount and type of values in these varies.
 
-	if err != nil {
-		return err
+	values := make([]interface{}, 0)
+	slots := make([]string, len(events), len(events))
+
+	for i, e := range events {
+		jsonParams, err := json.Marshal(e.Params)
+		if err != nil {
+			return err
+		}
+		values = append(values, e.EventType, time.Unix(int64(e.TS), 0), jsonParams)
+		slots[i] = "(?, ?, ?)"
 	}
 
 	// ORM looks like overkill at the moment.
-	_, dbErr := DB.Exec(`
+	_, dbErr := DB.Exec(fmt.Sprintf(`
         INSERT INTO analytics_event (event_type, ts, params)
-        VALUES (?, ?, ?)
-        `, event.EventType, time.Unix(int64(event.TS), 0), jsonParams,
+        VALUES %s
+        `, strings.Join(slots, ", ")), values...,
 	)
 
 	if dbErr != nil {
